@@ -16,6 +16,6 @@ body {
 .playground {
   height: 100dvh;
   width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
 }
+#root { display: flex; }
+#root > * { flex: 1; min-width: 0; }

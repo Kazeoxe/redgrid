@@ -1,20 +1,74 @@
-/* Neutral placeholder styling — to be replaced by the Claude Design tokens.
-   Only the mechanics (snap, full-viewport slides, overlay) matter here. */
+/* RedGrid design tokens — dark, silent, media-first. */
+:root {
+  --rg-base: #08080a;
+  --rg-win: #141417;
+  --rg-raised: #242429;
+  --rg-ink: #ededef;
+  --rg-ink-muted: #8a8a92;
+  --rg-ink-faint: #5a5a62;
+  --rg-accent: oklch(0.72 0.17 155);
+  --rg-danger: oklch(0.62 0.20 25);
+  --rg-radius-win: 8px;
+  --rg-font-sans: "Schibsted Grotesk", system-ui, sans-serif;
+  --rg-font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
 
-.rg-feed {
+/* ===== Feed window (autonomous vertical feed) ===== */
+.rg-window {
+  position: relative;
   height: 100%;
   width: 100%;
+  overflow: hidden;
+  background: #050506;
+}
+.rg-feed {
+  position: absolute;
+  inset: 0;
   overflow-y: scroll;
   scroll-snap-type: y mandatory;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  background: #000;
+  font-family: var(--rg-font-sans);
+  color: var(--rg-ink);
 }
-.rg-feed::-webkit-scrollbar {
-  display: none;
-}
+.rg-feed::-webkit-scrollbar { display: none; }
 
+.rg-window__pastille {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px rgba(8, 8, 10, 0.5);
+  pointer-events: none;
+  z-index: 3;
+}
+.rg-window__sound {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 8, 10, 0.5);
+  backdrop-filter: blur(6px);
+  color: var(--rg-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.15s, background 0.15s;
+  z-index: 3;
+  padding: 0;
+}
+.rg-window__sound:hover { opacity: 1; background: rgba(8, 8, 10, 0.75); }
+.rg-window__sound[data-on="true"] { opacity: 0.85; color: var(--rg-accent); }
+
+/* ===== Slide (one post) ===== */
 .rg-slide {
   position: relative;
   height: 100%;
@@ -22,8 +76,8 @@
   scroll-snap-align: start;
   scroll-snap-stop: always;
   overflow: hidden;
+  background: #050506;
 }
-
 .rg-slide__media,
 .rg-slide__media img,
 .rg-slide__media video {
@@ -34,55 +88,251 @@
   object-fit: cover;
   user-select: none;
 }
-
 .rg-slide__text-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(160deg, #1a1a1f, #2b2b33);
+  background: linear-gradient(160deg, var(--rg-win), var(--rg-raised));
 }
 
-.rg-slide__overlay {
-  position: absolute;
-  inset: auto 0 0 0;
-  padding: 1rem 1rem 1.5rem;
-  color: #fff;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+.rg-mono { font-family: var(--rg-font-mono); color: #c8c8ce; }
+
+/* ===== PIN lock ===== */
+@keyframes rg-shake {
+  10%, 90% { transform: translateX(-2px); }
+  20%, 80% { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-8px); }
+  40%, 60% { transform: translateX(8px); }
+}
+
+.rg-lock {
+  height: 100%;
+  width: 100%;
+  background: radial-gradient(120% 70% at 50% 0%, #161619 0%, var(--rg-base) 62%);
+  color: var(--rg-ink);
+  font-family: var(--rg-font-sans);
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 22px;
 }
-
-.rg-slide__meta {
-  display: flex;
-  gap: 0.6rem;
-  font-size: 0.8rem;
-  opacity: 0.85;
-}
-
-.rg-slide__title {
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.3;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.rg-slide__stats {
+.rg-lock__brand {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  font-size: 0.85rem;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--rg-ink-faint);
+}
+.rg-lock__logo {
+  width: 9px; height: 9px;
+  border-radius: 2.5px;
+  background: var(--rg-accent);
+}
+.rg-lock__prompt { font-size: 15px; color: #9a9aa2; }
+.rg-lock__dots { display: flex; gap: 18px; }
+.rg-lock__dots[data-shake="true"] { animation: rg-shake 0.42s ease; }
+.rg-lock__dot {
+  position: relative;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+}
+.rg-lock__dot-fill {
+  position: absolute; inset: 2px;
+  border-radius: 50%;
+  transition: opacity 0.12s;
+}
+.rg-lock__pad {
+  width: min(280px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.rg-lock__key {
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.028);
+  color: var(--rg-ink);
+  font: 400 22px/1 var(--rg-font-sans);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.rg-lock__key:hover { background: rgba(255, 255, 255, 0.07); }
+.rg-lock__key:active {
+  background: color-mix(in oklch, var(--rg-accent) 16%, transparent);
+  border-color: color-mix(in oklch, var(--rg-accent) 50%, transparent);
+}
+.rg-lock__key--del { font-size: 20px; color: var(--rg-ink-muted); }
+.rg-lock__bio {
+  width: 22px; height: 22px;
+  border: 1.6px solid var(--rg-ink-faint);
+  border-radius: 6px;
+  display: block;
 }
 
-.rg-slide__sound {
-  margin-left: auto;
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
+/* ===== Main grid ===== */
+.rg-grid {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background: #050506;
+  display: grid;
+  gap: 3px;
+  padding: 3px;
+}
+.rg-grid__slot {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--rg-radius-win);
+  background: #050506;
+}
+
+/* Three-dots toggle — corner, discreet. */
+.rg-grid__dots {
+  position: absolute;
+  bottom: 12px; right: 12px;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(8, 8, 10, 0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex; align-items: center; justify-content: center;
+  gap: 2.5px;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  z-index: 5;
+  padding: 0;
+}
+.rg-grid__dots:hover,
+.rg-grid__dots[data-open="true"] { opacity: 1; }
+.rg-grid__dots span {
+  width: 2.5px; height: 2.5px;
+  border-radius: 50%;
+  background: #c8c8ce;
+}
+
+/* Bottom-centered inline picker: layout numbers + gear. */
+.rg-grid__picker {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
   border-radius: 999px;
-  padding: 0.3rem 0.6rem;
-  color: #fff;
+  background: rgba(8, 8, 10, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  opacity: 0.85;
+  z-index: 6;
+}
+.rg-grid__picker-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--rg-ink);
+  font: 500 12px/1 var(--rg-font-sans);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
+  padding: 0;
+}
+.rg-grid__picker-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.rg-grid__picker-btn[data-selected="true"] {
+  background: color-mix(in oklch, var(--rg-accent) 22%, transparent);
+  color: var(--rg-accent);
+}
+.rg-grid__picker-sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0 2px;
+}
+
+/* ===== Settings ===== */
+.rg-settings {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(8, 8, 10, 0.72);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-family: var(--rg-font-sans);
+  color: var(--rg-ink);
+}
+.rg-settings__card {
+  width: 100%;
+  max-width: 480px;
+  max-height: 100%;
+  overflow: auto;
+  background: var(--rg-win);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.rg-settings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rg-settings__title { font: 600 18px/1 var(--rg-font-sans); letter-spacing: -0.01em; }
+.rg-settings__close {
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--rg-ink-muted);
+  font-size: 22px;
+  line-height: 1;
   cursor: pointer;
 }
+.rg-settings__close:hover { background: rgba(255, 255, 255, 0.06); color: var(--rg-ink); }
+.rg-settings__intro { margin: 0; font-size: 13px; line-height: 1.55; color: var(--rg-ink-muted); }
+.rg-settings__intro a { color: var(--rg-accent); }
+
+.rg-settings__field { display: flex; flex-direction: column; gap: 6px; }
+.rg-settings__label { font: 500 12px/1 var(--rg-font-sans); color: #c8c8ce; }
+.rg-settings__input {
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(8, 8, 10, 0.5);
+  color: var(--rg-ink);
+  font: 400 13px/1 var(--rg-font-sans);
+  outline: none;
+  transition: border-color 0.12s;
+}
+.rg-settings__input:focus { border-color: var(--rg-accent); }
+.rg-settings__hint { font-size: 11px; color: var(--rg-ink-faint); line-height: 1.4; }
+
+.rg-settings__save {
+  margin-top: 4px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: var(--rg-accent);
+  color: #062015;
+  font: 600 14px/1 var(--rg-font-sans);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.rg-settings__save:disabled { opacity: 0.4; cursor: not-allowed; }
