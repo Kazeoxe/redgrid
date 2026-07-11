@@ -52,16 +52,12 @@ export function FeedWindow({
   // The mode indicator lives in the parent (SlotFeed) because switching mode
   // remounts this component, which would wipe any local hint state.
   const canPage = !!(modes && modes.length > 1 && onModeChange);
-  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const windowRef = useRef<HTMLDivElement>(null);
+  const ptrStart = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
 
-  const begin = (x: number, y: number) => { swipeStart.current = { x, y }; };
-  const end = (x: number, y: number) => {
-    const s = swipeStart.current;
-    swipeStart.current = null;
-    if (!s || !canPage) return;
-    const dx = x - s.x;
-    const dy = y - s.y;
+  const commitSwipe = (dx: number, dy: number) => {
+    if (!canPage) return;
     // Horizontal intent: far enough and clearly more sideways than vertical.
     if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     const next = clamp(modeIndex + (dx < 0 ? 1 : -1), 0, modes!.length - 1);
@@ -69,22 +65,64 @@ export function FeedWindow({
     if (next !== modeIndex) onModeChange!(next);
   };
 
-  // Touch is the reliable path on mobile (a vertical-scroll container often
-  // swallows pointerup as pointercancel). Pointer events cover mouse/pen only.
-  const onTouchStart = (e: React.TouchEvent) => { const t = e.touches[0]; if (t) begin(t.clientX, t.clientY); };
-  const onTouchEnd = (e: React.TouchEvent) => { const t = e.changedTouches[0]; if (t) end(t.clientX, t.clientY); };
-  const onPointerDown = (e: React.PointerEvent) => { if (e.pointerType !== "touch") begin(e.clientX, e.clientY); };
-  const onPointerUp = (e: React.PointerEvent) => { if (e.pointerType !== "touch") end(e.clientX, e.clientY); };
+  // Mouse/pen via React pointer events.
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch") ptrStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (e.pointerType === "touch") return;
+    const s = ptrStart.current;
+    ptrStart.current = null;
+    if (s) commitSwipe(e.clientX - s.x, e.clientY - s.y);
+  };
   // Suppress the click a swipe leaves behind so it doesn't toggle the overlay.
   const onClickCapture = (e: React.MouseEvent) => {
     if (swiped.current) { e.stopPropagation(); swiped.current = false; }
   };
 
+  // Touch needs a NON-PASSIVE listener: once the gesture is clearly horizontal
+  // we preventDefault to stop the vertical scroll that would otherwise cancel
+  // the touch (the real reason swiping failed on phones).
+  useEffect(() => {
+    const el = windowRef.current;
+    if (!el || !canPage) return;
+    let start: { x: number; y: number } | null = null;
+    let horizontal = false;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (t) { start = { x: t.clientX, y: t.clientY }; horizontal = false; }
+    };
+    const onMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!start || !t) return;
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+      if (!horizontal && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) horizontal = true;
+      if (horizontal) e.preventDefault();
+    };
+    const onEnd = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      if (start && t) commitSwipe(t.clientX - start.x, t.clientY - start.y);
+      start = null;
+      horizontal = false;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+    // commitSwipe closes over modeIndex/modes/onModeChange (in deps).
+  }, [canPage, modeIndex, modes, onModeChange]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div
+      ref={windowRef}
       className="rg-window"
-      onTouchStart={canPage ? onTouchStart : undefined}
-      onTouchEnd={canPage ? onTouchEnd : undefined}
       onPointerDown={canPage ? onPointerDown : undefined}
       onPointerUp={canPage ? onPointerUp : undefined}
       onClickCapture={canPage ? onClickCapture : undefined}
