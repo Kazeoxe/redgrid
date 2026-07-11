@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import type { FeedPost } from "../../types";
 import { FeedItem } from "./FeedItem";
 import { useActiveIndex } from "./useActiveIndex";
@@ -12,7 +12,14 @@ export interface FeedWindowProps {
   pastilleColor?: string;
   /** If set, the pastille becomes a button that opens a slot editor. */
   onPastilleClick?: () => void;
+  /** Source modes for a group window, e.g. ["Mix", "r/a", "r/b"]. A
+   *  horizontal swipe pages through them; omit/≤1 disables paging. */
+  modes?: string[];
+  modeIndex?: number;
+  onModeChange?: (index: number) => void;
 }
+
+const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 
 /**
  * One autonomous vertical feed.
@@ -28,6 +35,9 @@ export function FeedWindow({
   onRequestSound,
   pastilleColor,
   onPastilleClick,
+  modes,
+  modeIndex = 0,
+  onModeChange,
 }: FeedWindowProps) {
   const { containerRef, setItemRef, activeIndex } = useActiveIndex(posts.length);
   const activePost = posts[activeIndex];
@@ -38,8 +48,40 @@ export function FeedWindow({
     if (activeIndex >= posts.length - loadMoreThreshold) onLoadMore();
   }, [activeIndex, posts.length, loadMoreThreshold, onLoadMore]);
 
+  // Horizontal swipe pages through source modes (group windows only).
+  // The mode indicator lives in the parent (SlotFeed) because switching mode
+  // remounts this component, which would wipe any local hint state.
+  const canPage = !!(modes && modes.length > 1 && onModeChange);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const swiped = useRef(false);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    swipeStart.current = { x: e.clientX, y: e.clientY };
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const s = swipeStart.current;
+    swipeStart.current = null;
+    if (!s || !canPage) return;
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    // Horizontal intent: far enough and clearly more sideways than vertical.
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const next = clamp(modeIndex + (dx < 0 ? 1 : -1), 0, modes!.length - 1);
+    swiped.current = true;
+    if (next !== modeIndex) onModeChange!(next);
+  };
+  // Suppress the click a swipe leaves behind so it doesn't toggle the overlay.
+  const onClickCapture = (e: React.MouseEvent) => {
+    if (swiped.current) { e.stopPropagation(); swiped.current = false; }
+  };
+
   return (
-    <div className="rg-window">
+    <div
+      className="rg-window"
+      onPointerDown={canPage ? onPointerDown : undefined}
+      onPointerUp={canPage ? onPointerUp : undefined}
+      onClickCapture={canPage ? onClickCapture : undefined}
+    >
       <div ref={containerRef} className="rg-feed" tabIndex={0}>
         {posts.map((post, i) => (
           <FeedItem
@@ -49,7 +91,6 @@ export function FeedWindow({
             active={i === activeIndex}
             eager={Math.abs(i - activeIndex) <= 1}
             muted={!(soundEnabled && i === activeIndex)}
-            onTapMedia={() => activeHasVideo && onRequestSound?.()}
           />
         ))}
       </div>

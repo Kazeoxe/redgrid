@@ -1,5 +1,4 @@
-import type { FeedPost, FeedMedia } from "@redgrid/ui";
-import type { RedditSettings } from "@redgrid/ui";
+import type { FeedPost, FeedMedia, RedditSettings } from "@redgrid/ui";
 
 const OAUTH_BASE = "https://oauth.reddit.com";
 
@@ -54,6 +53,16 @@ function normalize(p: RedditPost): FeedPost | null {
   };
 }
 
+export interface Page { posts: FeedPost[]; after: string | null }
+
+const toPage = (j: RedditListing): Page => ({
+  posts: j.data.children
+    .filter((c) => c.kind === "t3")
+    .map((c) => normalize(c.data))
+    .filter((p): p is FeedPost => p !== null),
+  after: j.data.after,
+});
+
 export interface FetchArgs {
   subreddit: string;
   after?: string;
@@ -62,7 +71,8 @@ export interface FetchArgs {
   signal?: AbortSignal;
 }
 
-export async function fetchSubreddit({ subreddit, after, accessToken, settings, signal }: FetchArgs): Promise<{ posts: FeedPost[]; after: string | null }> {
+/** Authenticated listing via oauth.reddit.com (once the API is approved). */
+export async function fetchSubreddit({ subreddit, after, accessToken, settings, signal }: FetchArgs): Promise<Page> {
   const url = new URL(`${OAUTH_BASE}/r/${subreddit}/hot`);
   url.searchParams.set("limit", "25");
   url.searchParams.set("raw_json", "1");
@@ -76,12 +86,7 @@ export async function fetchSubreddit({ subreddit, after, accessToken, settings, 
   });
   if (r.status === 401) throw new UnauthorizedError();
   if (!r.ok) throw new Error(`Reddit ${r.status}`);
-  const j = (await r.json()) as RedditListing;
-  const posts = j.data.children
-    .filter((c) => c.kind === "t3")
-    .map((c) => normalize(c.data))
-    .filter((p): p is FeedPost => p !== null);
-  return { posts, after: j.data.after };
+  return toPage((await r.json()) as RedditListing);
 }
 
 export class UnauthorizedError extends Error {

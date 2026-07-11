@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   LayoutGrid,
+  PASTILLE_COLORS,
   PinLock,
   Settings,
   SubPicker,
@@ -45,7 +46,6 @@ export function App() {
 
   const connected = !!tokens;
   const slotAt = (i: number): Slot => slots[i] ?? { subs: [FALLBACK_SUB] };
-  const subUrlFor = (i: number) => slotAt(i).subs.join("+") || FALLBACK_SUB;
 
   return (
     <>
@@ -56,7 +56,7 @@ export function App() {
         onOpenSettings={() => setSettingsOpen(true)}
         renderSlot={(i, color) => (
           <SlotFeed
-            subreddit={subUrlFor(i)}
+            subs={slotAt(i).subs}
             pastilleColor={color}
             soundOn={soundOwner === i}
             onRequestSound={() => setSoundOwner((cur) => (cur === i ? null : i))}
@@ -100,14 +100,5 @@ export function App() {
   );
 }
 
-// Mirror the palette in @redgrid/ui/PASTILLE_COLORS so the picker header
-// shows the same dot as the grid pastille.
-const PALETTE = [
-  "oklch(0.72 0.17 155)",
-  "oklch(0.7 0.16 250)",
-  "oklch(0.72 0.16 320)",
-  "oklch(0.78 0.15 90)",
-  "oklch(0.68 0.15 200)",
-  "oklch(0.72 0.15 30)",
-];
-const pastilleColorFor = (i: number) => PALETTE[i % PALETTE.length]!;
+// Same palette the grid pastille uses, so the picker header dot matches.
+const pastilleColorFor = (i: number) => PASTILLE_COLORS[i % PASTILLE_COLORS.length]!;

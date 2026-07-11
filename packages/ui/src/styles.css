@@ -8,7 +8,6 @@
   --rg-ink-faint: #5a5a62;
   --rg-accent: oklch(0.72 0.17 155);
   --rg-danger: oklch(0.62 0.20 25);
-  --rg-radius-win: 8px;
   --rg-font-sans: "Schibsted Grotesk", system-ui, sans-serif;
   --rg-font-mono: "JetBrains Mono", ui-monospace, monospace;
 }
@@ -34,6 +33,8 @@
 }
 .rg-feed::-webkit-scrollbar { display: none; }
 
+/* Pastille + sound are always visible — they identify the window and its
+   audio state at a glance. */
 .rg-window__pastille {
   position: absolute;
   top: 10px;
@@ -71,13 +72,42 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  opacity: 0.55;
+  opacity: 0.7;
   transition: opacity 0.15s, background 0.15s;
   z-index: 3;
   padding: 0;
 }
 .rg-window__sound:hover { opacity: 1; background: rgba(8, 8, 10, 0.75); }
-.rg-window__sound[data-on="true"] { opacity: 0.85; color: var(--rg-accent); }
+.rg-window__sound[data-on="true"] { opacity: 0.9; color: var(--rg-accent); }
+
+/* Group-mode indicator — appears on horizontal swipe, then fades. */
+.rg-window__mode {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(8, 8, 10, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font: 500 12px/1 var(--rg-font-sans);
+  color: var(--rg-ink);
+  z-index: 4;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.rg-window__mode-dots { display: flex; gap: 4px; }
+.rg-window__mode-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+.rg-window__mode-dots i[data-on="true"] { background: var(--rg-accent); }
 
 /* ===== Slide (one post) ===== */
 .rg-slide {
@@ -96,8 +126,36 @@
   inset: 0;
   height: 100%;
   width: 100%;
+  /* cover = media fills the whole window (RedGrid law #1: maximise content).
+     A full-bleed neighbour hides any sub-pixel snap seam far better than a
+     letterbox would. */
   object-fit: cover;
   user-select: none;
+}
+
+/* Info overlay — toggled by tapping the media. */
+.rg-slide__info {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 14px 14px 18px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0));
+  color: var(--rg-ink);
+  pointer-events: none;
+  z-index: 2;
+}
+.rg-slide__title {
+  margin: 0 0 8px;
+  font: 600 14px/1.35 var(--rg-font-sans);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rg-slide__stats {
+  display: flex;
+  gap: 14px;
+  font: 500 12px/1 var(--rg-font-mono);
+  color: #c8c8ce;
 }
 .rg-slide__text-bg {
   position: absolute;
@@ -199,7 +257,6 @@
 .rg-grid__slot {
   position: relative;
   overflow: hidden;
-  border-radius: var(--rg-radius-win);
   background: #050506;
 }
 

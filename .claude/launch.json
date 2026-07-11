@@ -2,12 +2,6 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "playground",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@redgrid/playground", "dev"],
-      "port": 5180
-    },
-    {
       "name": "mobile",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@redgrid/mobile", "dev"],

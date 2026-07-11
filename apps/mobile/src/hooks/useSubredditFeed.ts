@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { FeedPost, RedditSettings } from "@redgrid/ui";
-import { fetchSubreddit, UnauthorizedError } from "../lib/reddit";
+import { fetchSubreddit, UnauthorizedError, type Page } from "../lib/reddit";
 import { getValidAccessToken } from "../lib/refresh";
 
 interface Args {
@@ -10,9 +10,7 @@ interface Args {
   enabled: boolean;
 }
 
-interface Page { posts: FeedPost[]; after: string | null }
-
-/** One infinite listing per subreddit. Tokens are looked up per-fetch. */
+/** One infinite listing per subreddit (authenticated). */
 export function useSubredditFeed({ subreddit, settings, enabled }: Args) {
   return useInfiniteQuery<Page, Error, { pages: Page[]; pageParams: (string | undefined)[] }, readonly string[], string | undefined>({
     queryKey: ["reddit", subreddit] as const,
