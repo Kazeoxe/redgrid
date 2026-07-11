@@ -26,7 +26,8 @@ export function SlotFeed({ subs, pastilleColor, soundOn, onRequestSound, setting
   useEffect(() => () => clearTimeout(hintTimer.current), []);
 
   const isGroup = subs.length > 1;
-  const modes = isGroup ? ["Mix", ...subs.map((s) => `r/${s}`)] : undefined;
+  const short = (s: string) => (s.length > 4 ? `${s.slice(0, 4)}…` : s);
+  const modes = isGroup ? ["Mix", ...subs.map((s) => `r/${short(s)}`)] : undefined;
   const effectiveSub = !isGroup
     ? subs[0] ?? "aww"
     : modeIndex === 0
