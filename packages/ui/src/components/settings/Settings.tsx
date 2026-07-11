@@ -13,6 +13,10 @@ interface SettingsProps {
   initial: RedditSettings;
   onSave: (s: RedditSettings) => void;
   onClose: () => void;
+  /** Connection status pill + button (host-owned; hidden if omitted). */
+  connected?: boolean;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
 }
 
 /**
@@ -20,9 +24,11 @@ interface SettingsProps {
  * on Reddit; this screen captures the three values that lets RedGrid talk
  * to the API. No token exchange happens here — that's a later step.
  */
-export function Settings({ initial, onSave, onClose }: SettingsProps) {
+export function Settings({ initial, onSave, onClose, connected, onConnect, onDisconnect }: SettingsProps) {
   const [s, setS] = useState(initial);
   const disabled = !s.clientId.trim() || !s.redirectUri.trim() || !s.username.trim();
+  const showConnection = onConnect !== undefined;
+  const canConnect = !disabled && JSON.stringify(s) === JSON.stringify(initial);
 
   return (
     <div className="rg-settings">
@@ -70,6 +76,29 @@ export function Settings({ initial, onSave, onClose }: SettingsProps) {
         >
           Enregistrer
         </button>
+
+        {showConnection && (
+          <div className="rg-settings__conn">
+            <span className="rg-settings__conn-status" data-on={connected}>
+              <span className="rg-settings__conn-dot" />
+              {connected ? "Connecté à Reddit" : "Non connecté"}
+            </span>
+            {connected ? (
+              <button className="rg-settings__conn-btn" onClick={onDisconnect}>
+                Se déconnecter
+              </button>
+            ) : (
+              <button
+                className="rg-settings__conn-btn rg-settings__conn-btn--primary"
+                disabled={!canConnect}
+                onClick={onConnect}
+                title={canConnect ? undefined : "Enregistrez d'abord les identifiants."}
+              >
+                Se connecter à Reddit
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

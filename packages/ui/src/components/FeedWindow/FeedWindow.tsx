@@ -10,6 +10,8 @@ export interface FeedWindowProps {
   soundEnabled?: boolean;
   onRequestSound?: () => void;
   pastilleColor?: string;
+  /** If set, the pastille becomes a button that opens a slot editor. */
+  onPastilleClick?: () => void;
 }
 
 /**
@@ -25,6 +27,7 @@ export function FeedWindow({
   soundEnabled = false,
   onRequestSound,
   pastilleColor,
+  onPastilleClick,
 }: FeedWindowProps) {
   const { containerRef, setItemRef, activeIndex } = useActiveIndex(posts.length);
   const activePost = posts[activeIndex];
@@ -51,11 +54,21 @@ export function FeedWindow({
         ))}
       </div>
       {pastilleColor && (
-        <span
-          className="rg-window__pastille"
-          style={{ background: pastilleColor }}
-          aria-label={activePost ? `r/${activePost.subreddit}` : undefined}
-        />
+        onPastilleClick ? (
+          <button
+            type="button"
+            className="rg-window__pastille rg-window__pastille--btn"
+            style={{ background: pastilleColor }}
+            onClick={onPastilleClick}
+            aria-label="Éditer la fenêtre"
+          />
+        ) : (
+          <span
+            className="rg-window__pastille"
+            style={{ background: pastilleColor }}
+            aria-label={activePost ? `r/${activePost.subreddit}` : undefined}
+          />
+        )
       )}
       {activeHasVideo && (
         <button

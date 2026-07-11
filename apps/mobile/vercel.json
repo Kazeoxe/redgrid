@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd ../.. && pnpm --filter @redgrid/mobile build",
+  "installCommand": "cd ../.. && pnpm install",
+  "framework": "nextjs"
+}

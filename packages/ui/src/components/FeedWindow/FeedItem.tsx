@@ -1,5 +1,6 @@
-import { forwardRef } from "react";
+import { forwardRef, useRef } from "react";
 import type { FeedPost } from "../../types";
+import { useHls } from "./useHls";
 
 interface FeedItemProps {
   post: FeedPost;
@@ -9,12 +10,19 @@ interface FeedItemProps {
   onTapMedia: () => void;
 }
 
-/** One full-viewport slide. Media only — window-level chrome sits outside. */
 export const FeedItem = forwardRef<HTMLElement, FeedItemProps>(function FeedItem(
   { post, active, eager, muted, onTapMedia },
   ref,
 ) {
   const { media } = post;
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useHls(
+    videoRef,
+    media.kind === "video" ? media.hls : undefined,
+    media.kind === "video" ? media.url : "",
+    media.kind === "video" && eager,
+  );
+
   return (
     <article ref={ref} className="rg-slide" data-active={active}>
       <div className="rg-slide__media" onClick={onTapMedia}>
@@ -23,7 +31,7 @@ export const FeedItem = forwardRef<HTMLElement, FeedItemProps>(function FeedItem
         )}
         {eager && media.kind === "video" && (
           <video
-            src={media.url}
+            ref={videoRef}
             poster={media.poster}
             autoPlay={active}
             muted={muted}
