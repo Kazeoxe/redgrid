@@ -55,21 +55,26 @@ export function FeedWindow({
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
   const swiped = useRef(false);
 
-  const onPointerDown = (e: React.PointerEvent) => {
-    swipeStart.current = { x: e.clientX, y: e.clientY };
-  };
-  const onPointerUp = (e: React.PointerEvent) => {
+  const begin = (x: number, y: number) => { swipeStart.current = { x, y }; };
+  const end = (x: number, y: number) => {
     const s = swipeStart.current;
     swipeStart.current = null;
     if (!s || !canPage) return;
-    const dx = e.clientX - s.x;
-    const dy = e.clientY - s.y;
+    const dx = x - s.x;
+    const dy = y - s.y;
     // Horizontal intent: far enough and clearly more sideways than vertical.
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (Math.abs(dx) < 45 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
     const next = clamp(modeIndex + (dx < 0 ? 1 : -1), 0, modes!.length - 1);
     swiped.current = true;
     if (next !== modeIndex) onModeChange!(next);
   };
+
+  // Touch is the reliable path on mobile (a vertical-scroll container often
+  // swallows pointerup as pointercancel). Pointer events cover mouse/pen only.
+  const onTouchStart = (e: React.TouchEvent) => { const t = e.touches[0]; if (t) begin(t.clientX, t.clientY); };
+  const onTouchEnd = (e: React.TouchEvent) => { const t = e.changedTouches[0]; if (t) end(t.clientX, t.clientY); };
+  const onPointerDown = (e: React.PointerEvent) => { if (e.pointerType !== "touch") begin(e.clientX, e.clientY); };
+  const onPointerUp = (e: React.PointerEvent) => { if (e.pointerType !== "touch") end(e.clientX, e.clientY); };
   // Suppress the click a swipe leaves behind so it doesn't toggle the overlay.
   const onClickCapture = (e: React.MouseEvent) => {
     if (swiped.current) { e.stopPropagation(); swiped.current = false; }
@@ -78,6 +83,8 @@ export function FeedWindow({
   return (
     <div
       className="rg-window"
+      onTouchStart={canPage ? onTouchStart : undefined}
+      onTouchEnd={canPage ? onTouchEnd : undefined}
       onPointerDown={canPage ? onPointerDown : undefined}
       onPointerUp={canPage ? onPointerUp : undefined}
       onClickCapture={canPage ? onClickCapture : undefined}

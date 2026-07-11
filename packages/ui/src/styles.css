@@ -53,6 +53,12 @@
   cursor: pointer;
   transition: transform 0.12s, box-shadow 0.12s;
 }
+/* Enlarge the tap target (~40px) without changing the visible 11px dot. */
+.rg-window__pastille--btn::before {
+  content: "";
+  position: absolute;
+  inset: -15px;
+}
 .rg-window__pastille--btn:hover {
   transform: scale(1.4);
   box-shadow: 0 0 0 4px rgba(8, 8, 10, 0.6), 0 0 10px currentColor;
